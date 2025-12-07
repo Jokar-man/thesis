@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Barcelona Vulnerability Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
+
+  <script src="main.js" defer></script>
+
+  <style>
+    html, body { margin:0; height:100%; background:#050505; font-family:system-ui, sans-serif; color:#fff; overflow:hidden; }
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+
+    /* Control Panel (Left) */
+    #panel {
+      position:absolute;
+      top:20px;
+      left:20px;
+      width:240px;
+      background:rgba(10, 10, 10, 0.9);
+      backdrop-filter: blur(10px);
+      padding:16px;
+      border-radius:12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow:0 20px 40px rgba(0,0,0,0.6);
+      z-index:30;
+    }
+    #panel h3 { margin:0 0 12px 0; color:#00eaff; font-size:16px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+    #panel button {
+      display:block;
+      width:100%;
+      margin:8px 0;
+      padding:10px;
+      border-radius:6px;
+      border:1px solid rgba(0, 234, 255, 0.2);
+      cursor:pointer;
+      font-weight:600;
+      font-size:13px;
+      background:rgba(0, 234, 255, 0.1);
+      color:#00eaff;
+      transition: all 0.2s ease;
+    }
+
+    #panel button:hover { background:rgba(0, 234, 255, 0.2); }
+
+    #panel button.active {
+      background:#ff0055;
+      color:#fff;
+      border-color:#ff0055;
+      box-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
+    }
+
+    /* Rank Panel (Right) */
+    #rank-panel {
+      position:absolute;
+      bottom:30px;
+      right:30px;
+      width:320px;
+      z-index:30;
+      background:rgba(10, 10, 10, 0.9);
+      backdrop-filter: blur(10px);
+      padding:16px;
+      border-radius:12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow:0 20px 40px rgba(0,0,0,0.6);
+    }
+    #rank-panel h4 { margin:0 0 10px 0; color:#fff; font-size:14px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .neigh-card {
+      background:rgba(255,255,255,0.05);
+      margin-bottom:8px;
+      padding:10px;
+      border-radius:6px;
+      border-left: 3px solid #00eaff;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .neigh-card:hover { transform: translateX(-5px); background:rgba(255,255,255,0.1); }
+    .neigh-title { font-weight: 700; font-size: 14px; color: #fff; }
+    .neigh-meta { font-size: 12px; color: #aaa; margin-top: 4px; }
+
+    /* Legend (Bottom Left) */
+    #info-legend {
+      position:absolute;
+      bottom:30px;
+      left:20px;
+      z-index:20;
+      background:rgba(0,0,0,0.8);
+      padding:14px;
+      border-radius:12px;
+      font-size:12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      width: 200px;
+    }
+    .legend-gradient {
+      width: 100%; height: 10px;
+      background: linear-gradient(90deg, rgba(0,120,255,0.2), rgba(0,255,180,0.4), rgba(255,255,0,0.6), rgba(255,0,0,0.8));
+      border-radius: 5px;
+      margin-top: 5px;
+    }
+    .legend-labels { display:flex; justify-content:space-between; margin-top:4px; color:#ccc; font-size:10px; }
+
+    /* Radius Slider Area and Info Icon Container */
+    .radius-control {
+      margin-top: 15px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      display: flex; /* Flex container for slider and icon */
+      flex-wrap: wrap; /* Allows wrapping */
+      gap: 10px;
+    }
+
+    /* Style for the slider section to take most of the width */
+    .slider-section {
+      width: calc(100% - 40px); /* Make room for the icon */
+    }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: #00eaff;
+      cursor: pointer;
+    }
+
+    /* Info Modal/Icon */
+    #info-icon {
+      /* NEW STYLING: Smaller and inline with the radius control */
+      width: 30px;
+      height: 30px;
+      background: rgba(10, 10, 10, 0.9);
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #00eaff;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-style: italic;
+      font-family: serif;
+      margin-top: 10px; /* Align with slider input */
+    }
+    #info-icon:hover {
+      background: rgba(0, 234, 255, 0.1);
+    }
+
+    #info-modal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      max-height: 80vh;
+      background: rgba(10, 10, 10, 0.95);
+      backdrop-filter: blur(15px);
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 234, 255, 0.2);
+      box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+      z-index: 100;
+      display: none;
+      overflow-y: auto;
+    }
+    #info-modal h4 {
+      margin: 0 0 15px 0;
+      color: #00eaff;
+      font-size: 18px;
+      text-transform: uppercase;
+    }
+    #info-modal p {
+      font-size: 14px;
+      color: #ccc;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+    #info-modal a {
+      color: #00eaff;
+      text-decoration: none;
+    }
+    #info-modal a:hover {
+      text-decoration: underline;
+    }
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      color: #ff0055;
+      cursor: pointer;
+      font-weight: 300;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="panel">
+    <h3>Data Layers</h3>
+    <button data-field="heat">Combined Heat (UHI + LST)</button>
+    <button data-field="SPEI">Drought (SPEI)</button>
+    <button data-field="pop_sex3">Vulnerable Population</button>
+  </div>
+
+  <div id="rank-panel">
+    <h4>Top 5 Vulnerable Neighborhoods</h4>
+    <div id="rank-popup">
+      <div style="color:#666; font-style:italic; font-size:13px; padding:10px;">
+        Select a layer to see top neighborhoods...
+      </div>
+    </div>
+  </div>
+
+  <div id="info-legend">
+    <div style="display:flex; justify-content:space-between; align-items:center; color:#fff; font-weight:700;">
+      <span>Vulnerability Intensity</span>
+    </div>
+    <div class="legend-gradient"></div>
+    <div class="legend-labels">
+      <span>Low</span>
+      <span>High</span>
+    </div>
+
+    <div class="radius-control">
+      <div class="slider-section">
+        <div class="radius-header">
+          <span>Focus Radius</span>
+          <span id="radius-val">5.0 km</span>
+        </div>
+        <input type="range" id="radius-slider" min="1" max="5" step="0.5" value="5">
+        <div style="color:#888; font-size:10px; margin-top:4px;">From City Center</div>
+      </div>
+      <div id="info-icon">i</div> </div>
+  </div>
+
+  <div id="info-modal">
+    <span class="close-modal">&times;</span>
+    <h4>Data Sources & Information</h4>
+    <p>
+      This map visualizes combined vulnerability in Barcelona based on three primary factors:
+    </p>
+    <p>
+      <strong>1. Combined Heat (UHI + LST):</strong> An average index derived from the Urban Heat Island (UHI) effect and Land Surface Temperature (LST) data.
+    </p>
+    <p>
+      <strong>2. Drought (SPEI):</strong> Standardized Precipitation Evapotranspiration Index, indicating hydrological stress.
+    </p>
+    <p>
+      <strong>3. Vulnerable Population:</strong> Data on specific vulnerable demographic groups (e.g., population aged 65+).
+    </p>
+    <p>
+      All data points are aggregated to local neighborhood areas and normalized to create a composite vulnerability score (0-1).
+    </p>
+    <p style="margin-top:20px; font-size:12px; color:#666;">
+      <a href="https://www.mapbox.com/" target="_blank">Map visuals powered by Mapbox.</a>
+    </p>
+  </div>
+</body>
+</html>
