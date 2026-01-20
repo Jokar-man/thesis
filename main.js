@@ -468,22 +468,6 @@ function updateRanking() {
   });
 }
 
-function flyToTop() {
-  if (!activeFields.length) return;
-
-  const focusPoints = points.features.filter(f => f.properties._inFocus);
-  const top = focusPoints.sort((a,b)=>b.properties._value - a.properties._value)[0];
-
-  if (!top) return;
-
-  const c = top.geometry.coordinates;
-  map.flyTo({
-    center: c,
-    zoom: 17,
-    pitch: 65,
-    speed: 1.2
-  });
-}
 
 /* -------------------------
    Climate Shelter Functions
