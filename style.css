@@ -1,0 +1,435 @@
+html, body {
+  margin:0;
+  height:100%;
+  background:#050505;
+  font-family:system-ui, sans-serif;
+  color:#fff;
+  overflow:hidden;
+}
+
+#map {
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:100%;
+}
+
+/* LEFT PANEL */
+#panel {
+  position:absolute;
+  top:20px;
+  left:20px;
+  width:240px;
+  background:rgba(10, 10, 10, 0.9);
+  backdrop-filter: blur(10px);
+  padding:16px;
+  border-radius:12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow:0 20px 40px rgba(0,0,0,0.6);
+  z-index:30;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+#panel h3 {
+  margin:0 0 12px 0;
+  color:#00eaff;
+  font-size:16px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+#panel button {
+  display:block;
+  width:100%;
+  margin:8px 0;
+  padding:10px;
+  border-radius:6px;
+  border:1px solid rgba(0, 234, 255, 0.2);
+  cursor:pointer;
+  font-weight:600;
+  font-size:13px;
+  background:rgba(0, 234, 255, 0.1);
+  color:#00eaff;
+  transition: all 0.2s ease;
+}
+
+#panel button:hover {
+  background:rgba(0, 234, 255, 0.2);
+}
+
+#panel button.active {
+  background:#ff0055;
+  color:#fff;
+  border-color:#ff0055;
+  box-shadow: 0 0 15px rgba(255, 0, 85, 0.4);
+}
+
+#panel hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  margin: 12px 0;
+}
+
+/* MUNICIPALITY NAV (Top Right) */
+#municipality-nav {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 30;
+}
+
+#municipality-nav button {
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 234, 255, 0.3);
+  background: rgba(10, 10, 10, 0.9);
+  backdrop-filter: blur(10px);
+  color: #00eaff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+#municipality-nav button:hover {
+  background: rgba(0, 234, 255, 0.15);
+  border-color: #00eaff;
+}
+
+/* SHELTER BUTTON */
+#shelter-btn {
+  margin-top: 15px;
+  background: rgba(255, 165, 0, 0.2);
+  border-color: rgba(255, 165, 0, 0.3);
+  color: #ffa500;
+}
+
+#shelter-btn:hover {
+  background: rgba(255, 165, 0, 0.3);
+}
+
+/* RANK PANEL (Bottom Right) */
+#rank-panel {
+  position:absolute;
+  bottom:30px;
+  right:30px;
+  width:320px;
+  z-index:30;
+  background:rgba(10, 10, 10, 0.9);
+  backdrop-filter: blur(10px);
+  padding:16px;
+  border-radius:12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow:0 20px 40px rgba(0,0,0,0.6);
+}
+
+#rank-panel h4 {
+  margin:0 0 10px 0;
+  color:#fff;
+  font-size:14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.neigh-card {
+  background:rgba(255,255,255,0.05);
+  margin-bottom:8px;
+  padding:10px;
+  border-radius:6px;
+  border-left: 3px solid #00eaff;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.neigh-card:hover {
+  transform: translateX(-5px);
+  background:rgba(255,255,255,0.1);
+}
+
+.neigh-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: #fff;
+}
+
+.neigh-meta {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+/* LEGEND (Bottom Left) */
+#info-legend {
+  position:absolute;
+  bottom:30px;
+  left:20px;
+  z-index:20;
+  background:rgba(10, 10, 10, 0.9);
+  backdrop-filter: blur(10px);
+  padding:14px;
+  border-radius:12px;
+  font-size:12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  width: 200px;
+  box-shadow:0 20px 40px rgba(0,0,0,0.6);
+}
+
+.legend-gradient {
+  width: 100%;
+  height: 10px;
+  background: linear-gradient(90deg, rgba(0,120,255,0.2), rgba(0,255,180,0.4), rgba(255,255,0,0.6), rgba(255,0,0,0.8));
+  border-radius: 5px;
+  margin-top: 5px;
+}
+
+.legend-labels {
+  display:flex;
+  justify-content:space-between;
+  margin-top:4px;
+  color:#ccc;
+  font-size:10px;
+}
+
+/* RADIUS CONTROL */
+.radius-control {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.slider-section {
+  flex: 1;
+  min-width: 140px;
+}
+
+.radius-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #aaa;
+  margin-bottom: 5px;
+}
+
+#radius-val {
+  color: #00eaff;
+  font-weight: 600;
+}
+
+input[type=range] {
+  width: 100%;
+  accent-color: #00eaff;
+  cursor: pointer;
+}
+
+/* INFO ICON */
+#info-icon {
+  width: 30px;
+  height: 30px;
+  background: rgba(10, 10, 10, 0.9);
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #00eaff;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-style: italic;
+  font-family: serif;
+  margin-top: 10px;
+}
+
+#info-icon:hover {
+  background: rgba(0, 234, 255, 0.1);
+}
+
+/* INFO MODAL */
+#info-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  max-width: 90%;
+  max-height: 80vh;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(15px);
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 234, 255, 0.2);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+  z-index: 100;
+  display: none;
+  overflow-y: auto;
+}
+
+#info-modal h4 {
+  margin: 0 0 15px 0;
+  color: #00eaff;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+
+#info-modal p {
+  font-size: 14px;
+  color: #ccc;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+#info-modal a {
+  color: #00eaff;
+  text-decoration: none;
+}
+
+#info-modal a:hover {
+  text-decoration: underline;
+}
+
+.close-modal {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 24px;
+  color: #ff0055;
+  cursor: pointer;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.close-modal:hover {
+  color: #ff3377;
+}
+
+/* SHELTER MODAL */
+#shelter-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 450px;
+  max-width: 90%;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(15px);
+  padding: 25px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 165, 0, 0.3);
+  box-shadow: 0 40px 80px rgba(0,0,0,0.8);
+  z-index: 101;
+  display: none;
+}
+
+#shelter-modal h4 {
+  margin: 0 0 15px 0;
+  color: #ffa500;
+  font-size: 18px;
+  text-transform: uppercase;
+}
+
+#shelter-modal p {
+  color: #ccc;
+  font-size: 13px;
+  margin-bottom: 15px;
+}
+
+#shelter-modal input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+#shelter-modal button {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  background: rgba(255, 165, 0, 0.2);
+  border: 1px solid rgba(255, 165, 0, 0.3);
+  border-radius: 6px;
+  color: #ffa500;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+#shelter-modal button:hover {
+  background: rgba(255, 165, 0, 0.3);
+}
+
+/* SHELTER INFO PANEL */
+#shelter-info-panel {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  width: 320px;
+  background: rgba(10, 10, 10, 0.9);
+  backdrop-filter: blur(10px);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 165, 0, 0.3);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  z-index: 30;
+  display: none;
+}
+
+#shelter-info-panel h4 {
+  margin: 0 0 15px 0;
+  color: #ffa500;
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.info-row {
+  margin: 10px 0;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.info-label {
+  color: #aaa;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  color: #fff;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+#close-shelter-panel {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 20px;
+  color: #ff0055;
+  cursor: pointer;
+  font-weight: 300;
+}
+
+#close-shelter-panel:hover {
+  color: #ff3377;
+}
+
+/* Municipality specific - info icon container */
+.info-icon-container {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  display: flex;
+  justify-content: center;
+}

@@ -10,8 +10,6 @@ let climateShelters = null;
 let climateIsochrones = null;
 let userLocation = null;
 let animationMarker = null;
-// Removed: let pathFinder = null;
-// Removed: let roadNetwork = null;
 
 const rankContainer = document.getElementById("rank-popup");
 let centerFocusKm = 5;
@@ -20,7 +18,7 @@ let centerFocusKm = 5;
    UTILITY: Haversine Distance (km)
 -------------------------- */
 function getDistance(coord1, coord2) {
-  const R = 6371; // Radius of Earth in kilometers
+  const R = 6371;
   const lat1 = coord1[1];
   const lon1 = coord1[0];
   const lat2 = coord2[1];
@@ -34,15 +32,13 @@ function getDistance(coord1, coord2) {
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c; // Distance in km
+  const distance = R * c;
   return distance;
 }
-
 
 /* -------------------------
    Initialize MAP
 -------------------------- */
-
 const map = new mapboxgl.Map({
   container: "map",
   style: "mapbox://styles/mapbox/dark-v11",
@@ -62,29 +58,25 @@ map.on("load", async () => {
   -------------------------- */
   try {
     cadastralData = await fetch("data/barcelona_buildings.geojson").then(r => r.json());
+    map.addSource("cadastral-buildings-source", {
+      type: "geojson",
+      data: cadastralData
+    });
+
+    map.addLayer({
+      id: "3d-cadastral",
+      type: "fill-extrusion",
+      source: "cadastral-buildings-source",
+      paint: {
+        "fill-extrusion-color": "#00eaff",
+        "fill-extrusion-height": ["*", ["get", "numberOfFloorsAboveGround"], 3.5],
+        "fill-extrusion-base": 0,
+        "fill-extrusion-opacity": 0.28
+      }
+    }, "waterway-label");
   } catch (err) {
     console.error("Could not load cadastral buildings:", err);
   }
-
-  // Add as source
-  map.addSource("cadastral-buildings-source", {
-    type: "geojson",
-    data: cadastralData
-  });
-
-  // CUSTOM 3D EXTRUSION (your code maintained)
-  map.addLayer({
-    id: "3d-cadastral",
-    type: "fill-extrusion",
-    source: "cadastral-buildings-source",
-    paint: {
-      "fill-extrusion-color": "#00eaff",
-      "fill-extrusion-height": ["*", ["get", "numberOfFloorsAboveGround"], 3.5],
-      "fill-extrusion-base": 0,
-      "fill-extrusion-opacity": 0.28
-    }
-  }, "waterway-label");
-
 
   /* -------------------------
      MAPBOX DEFAULT 3D BUILDINGS
@@ -110,7 +102,6 @@ map.on("load", async () => {
     }
   });
 
-
   /* -------------------------
      LOAD Vulnerability Points
   -------------------------- */
@@ -119,7 +110,7 @@ map.on("load", async () => {
     const text = await resp.text();
     points = JSON.parse(text);
   } catch (err) {
-    alert("ERROR: data/viz.geojson not found.");
+    alert("ERROR: data/data.geojson not found.");
     return;
   }
 
@@ -131,7 +122,7 @@ map.on("load", async () => {
   });
 
   /* -------------------------
-     Glow Halo Layer (under 3D)
+     Glow Halo Layer
   -------------------------- */
   map.addLayer({
     id: "glow-halo",
@@ -156,9 +147,8 @@ map.on("load", async () => {
     }
   });
 
-
   /* -------------------------
-     Glow Core Layer (bright point)
+     Glow Core Layer
   -------------------------- */
   map.addLayer({
     id: "glow-core",
@@ -183,7 +173,7 @@ map.on("load", async () => {
   });
 
   /* -------------------------
-     LOAD Climate Shelters (FIX: Ensured visibility)
+     LOAD Climate Shelters
   -------------------------- */
   try {
     const shelterResp = await fetch("data/climate_shelters.geojson");
@@ -195,7 +185,6 @@ map.on("load", async () => {
       data: climateShelters
     });
 
-    // Add shelter points ABOVE all other layers - Visibility set to 'visible'
     map.addLayer({
       id: "shelter-points",
       type: "circle",
@@ -208,11 +197,10 @@ map.on("load", async () => {
         "circle-opacity": 0.9
       },
       layout: {
-        "visibility": "visible" // Explicitly visible
+        "visibility": "visible"
       }
     });
 
-    // Add shelter labels - Visibility set to 'visible'
     map.addLayer({
       id: "shelter-labels",
       type: "symbol",
@@ -220,7 +208,7 @@ map.on("load", async () => {
       layout: {
         "text-field": "🏠",
         "text-size": 18,
-        "visibility": "visible", // Explicitly visible
+        "visibility": "visible",
         "text-offset": [0, -1.5]
       },
       paint: {
@@ -244,8 +232,6 @@ map.on("load", async () => {
   } catch (err) {
     console.error("Could not load climate isochrones:", err);
   }
-  /* Removed: BUILD ROAD NETWORK GRAPH block (used undefined PathFinder) */
-
 
   /* -------------------------
      Click handlers
@@ -260,7 +246,6 @@ map.on("load", async () => {
 
     let html = `<div style="font-weight:700;color:#ffa500">Climate Shelter</div>`;
 
-    // Display name, neighborhood, and district
     const name = p.name || p.Name || "N/A";
     const neighborhood = p.addresses_neighborhood_name || "N/A";
     const district = p.addresses_district_name || "N/A";
@@ -294,20 +279,15 @@ map.on("load", async () => {
 /* -------------------------
    Stats + Normalization
 -------------------------- */
-
 function computeStats() {
-  const fields = { heat: [], SPEI: [], pop_sex3: [], immigrant1: [], income1: [] };
+  const fields = { heat: [], SPEI: [] };
 
   points.features.forEach(f => {
     const p = f.properties;
     const heatVal = computeRaw(p, "heat");
-    const incomeVal = p.income1 || 0;
 
     fields.heat.push(heatVal);
     fields.SPEI.push(p.SPEI || 0);
-    fields.pop_sex3.push(p.pop_sex3 || 0);
-    fields.immigrant1.push(p.immigrant1 || 0);
-    fields.income1.push(incomeVal);
   });
 
   Object.keys(fields).forEach(k => {
@@ -327,63 +307,28 @@ function computeStats() {
   console.log("Stats computed:", stats);
 }
 
+function normalize(raw, f) {
+  const s = stats[f];
+  if (!s || s.range === 0) return 0;
+  return Math.min(1, Math.max(0, (raw - s.min) / s.range));
+}
+
 function computeRaw(p, f) {
   if (f === "heat") {
     const lst = +p.LST1 || 0;
     const uhi = +p.uhi2 || 0;
     return (lst + uhi) / 2;
   }
-  if (f === "income1") {
-    const income = +p[f] || 0;
-    return income;
-  }
   return +p[f] || 0;
-}
-
-function normalize(raw, f) {
-  const s = stats[f];
-  if (!s || s.range === 0) return 0;
-
-  if (f === "income1") {
-    const normalized = (raw - s.min) / s.range;
-    return Math.min(1, Math.max(0, 1 - normalized));
-  }
-
-  return Math.min(1, Math.max(0, (raw - s.min) / s.range));
-}
-
-function formatValue(v) {
-  return isFinite(v) ? Math.round(v * 100) / 100 : "N/A";
 }
 
 /* -------------------------
    UI Buttons + Updates
 -------------------------- */
-
 function setupButtons() {
-  // Ensure shelter button is active on load
-  const shelterBtn = document.querySelector('#panel button[data-field="climate_shelter"]');
-  if (shelterBtn) {
-    shelterBtn.classList.add("active");
-  }
-
   document.querySelectorAll("#panel button[data-field]").forEach(btn => {
     btn.onclick = () => {
       const f = btn.dataset.field;
-
-      if (f === "climate_shelter") {
-        const visibility = map.getLayoutProperty("shelter-points", "visibility");
-        if (visibility === "visible") {
-          map.setLayoutProperty("shelter-points", "visibility", "none");
-          map.setLayoutProperty("shelter-labels", "visibility", "none");
-          btn.classList.remove("active");
-        } else {
-          map.setLayoutProperty("shelter-points", "visibility", "visible");
-          map.setLayoutProperty("shelter-labels", "visibility", "visible");
-          btn.classList.add("active");
-        }
-        return;
-      }
 
       if (activeFields.includes(f)) {
         activeFields = activeFields.filter(x => x !== f);
@@ -392,8 +337,6 @@ function setupButtons() {
         activeFields.push(f);
         btn.classList.add("active");
       }
-      // Clean up the activeFields array in case the shelter field was erroneously added
-      activeFields = activeFields.filter(x => x !== "climate_shelter");
 
       updateVisualization();
       flyToTop();
@@ -407,7 +350,7 @@ function setupRadiusControl() {
 
   slider.oninput = () => {
     centerFocusKm = Number(slider.value);
-    label.textContent = `${centerFocusKm} km`;
+    label.textContent = `${centerFocusKm.toFixed(1)} km`;
     updateVisualization();
   };
 }
@@ -415,14 +358,9 @@ function setupRadiusControl() {
 function setupInfoModal() {
   const icon = document.getElementById("info-icon");
   const modal = document.getElementById("info-modal");
-  const close = document.querySelector(".close-modal");
 
   icon.onclick = () => {
     modal.style.display = "block";
-  };
-
-  close.onclick = () => {
-    modal.style.display = "none";
   };
 
   window.onclick = (event) => {
@@ -450,7 +388,7 @@ function setupShelterModal() {
 }
 
 function updateVisualization() {
-  const vulnerabilityFields = activeFields.filter(f => f !== "climate_shelter");
+  const vulnerabilityFields = activeFields;
 
   points.features.forEach(f => {
     let sum = 0;
@@ -478,9 +416,7 @@ function updateVisualization() {
 function updateRanking() {
   rankContainer.innerHTML = "";
 
-  const vulnerabilityFields = activeFields.filter(f => f !== "climate_shelter");
-
-  if (!vulnerabilityFields.length) {
+  if (!activeFields.length) {
     rankContainer.innerHTML =
       `<div style="color:#666;font-style:italic;padding:10px;">Select a layer...</div>`;
     return;
@@ -488,13 +424,13 @@ function updateRanking() {
 
   const focusPoints = points.features.filter(f => f.properties._inFocus);
 
-  const sortedFocusPoints = focusPoints
+  const sortedPoints = focusPoints
     .sort((a,b)=>b.properties._value - a.properties._value);
 
   const topRanked = [];
-  const minDistanceKm = 2;
+  const minDistanceKm = 1; // 1km buffer zone
 
-  for (const feature of sortedFocusPoints) {
+  for (const feature of sortedPoints) {
     if (topRanked.length >= 5) break;
 
     const currentCoords = feature.geometry.coordinates;
@@ -521,14 +457,11 @@ function updateRanking() {
     card.innerHTML = `
       <div class="neigh-title">${i+1}. ${p.N_Barri}</div>
       <div class="neigh-meta">Score: ${Math.round(p._value*100)}%</div>
-      <div style="color:#aaa;font-size:12px;margin-top:6px;">
-        <b>${p.FAMILIA || ""}</b><br>${p.Descripcio || ""}
-      </div>
     `;
 
     card.onclick = () => {
       const c = f.geometry.coordinates;
-      map.flyTo({center:c, zoom:18, pitch:65, speed:1.1});
+      map.flyTo({center:c, zoom:17, pitch:65, speed:1.1});
     };
 
     rankContainer.appendChild(card);
@@ -536,20 +469,17 @@ function updateRanking() {
 }
 
 function flyToTop() {
-  const vulnerabilityFields = activeFields.filter(f => f !== "climate_shelter");
-  if (!vulnerabilityFields.length) return;
+  if (!activeFields.length) return;
 
-  const top = points.features
-    .filter(f => f.properties._inFocus)
-    .sort((a,b)=>b.properties._value - a.properties._value)[0];
+  const focusPoints = points.features.filter(f => f.properties._inFocus);
+  const top = focusPoints.sort((a,b)=>b.properties._value - a.properties._value)[0];
 
   if (!top) return;
 
   const c = top.geometry.coordinates;
-
   map.flyTo({
     center: c,
-    zoom: 18,
+    zoom: 17,
     pitch: 65,
     speed: 1.2
   });
@@ -558,7 +488,6 @@ function flyToTop() {
 /* -------------------------
    Climate Shelter Functions
 -------------------------- */
-
 async function findNearestShelter() {
   const input = document.getElementById("location-input").value.trim();
   const statusDiv = document.getElementById("shelter-status");
@@ -628,7 +557,6 @@ async function findNearestShelter() {
   document.getElementById("shelter-modal").style.display = "none";
 
   displayShelterInfo(nearestShelter, minDistance);
-
   animateRouteToShelter(coords, nearestShelter.geometry.coordinates);
 }
 
@@ -637,7 +565,6 @@ function displayShelterInfo(shelter, distance) {
   const content = document.getElementById("shelter-info-content");
 
   const props = shelter.properties;
-
   const name = props.name || props.Name || "N/A";
   const neighborhood = props.addresses_neighborhood_name || "N/A";
   const district = props.addresses_district_name || "N/A";
@@ -670,12 +597,10 @@ function animateRouteToShelter(start, end) {
 
   let routeCoordinates = findRouteInIsochrones(start, end);
 
-  // Check for pathfinding failure signaled by findRouteInIsochrones
   if (!routeCoordinates) {
-      // Re-open the modal to give the user a chance to input a new location or click the map
-      document.getElementById("shelter-modal").style.display = "block";
-      handleRoutingError("Could not find a walkable path from your location on the available road network.");
-      return;
+    document.getElementById("shelter-modal").style.display = "block";
+    handleRoutingError("Could not find a walkable path from your location on the available road network.");
+    return;
   }
 
   map.addSource("shelter-route", {
@@ -735,27 +660,25 @@ function animateRouteToShelter(start, end) {
 
     const progress = currentStep / steps;
 
-    // Use turf.length and turf.along for smoother animation along the actual path
     if (typeof turf !== 'undefined' && turf.lineString) {
       const line = turf.lineString(routeCoordinates);
       const lengthKm = turf.length(line, {units: 'kilometers'});
       const alongPoint = turf.along(line, lengthKm * progress, {units: 'kilometers'});
       animationMarker.setLngLat(alongPoint.geometry.coordinates);
     } else {
-        // Fallback to simpler linear interpolation
-        const totalLength = routeCoordinates.length - 1;
-        const segmentIndex = Math.floor(progress * totalLength);
-        const segmentProgress = (progress * totalLength) - segmentIndex;
+      const totalLength = routeCoordinates.length - 1;
+      const segmentIndex = Math.floor(progress * totalLength);
+      const segmentProgress = (progress * totalLength) - segmentIndex;
 
-        if (segmentIndex < totalLength) {
-          const startCoord = routeCoordinates[segmentIndex];
-          const endCoord = routeCoordinates[segmentIndex + 1];
+      if (segmentIndex < totalLength) {
+        const startCoord = routeCoordinates[segmentIndex];
+        const endCoord = routeCoordinates[segmentIndex + 1];
 
-          const lng = startCoord[0] + (endCoord[0] - startCoord[0]) * segmentProgress;
-          const lat = startCoord[1] + (endCoord[1] - startCoord[1]) * segmentProgress;
+        const lng = startCoord[0] + (endCoord[0] - startCoord[0]) * segmentProgress;
+        const lat = startCoord[1] + (endCoord[1] - startCoord[1]) * segmentProgress;
 
-          animationMarker.setLngLat([lng, lat]);
-        }
+        animationMarker.setLngLat([lng, lat]);
+      }
     }
 
     currentStep++;
@@ -763,85 +686,71 @@ function animateRouteToShelter(start, end) {
   };
 
   animate();
-
   window.shelterMarkers = [startMarker, endMarker];
 }
 
 /* -------------------------
-   FIXED ROUTING LOGIC (Using Turf.js for Road Snapping)
+   ROUTING LOGIC
 -------------------------- */
 function findRouteInIsochrones(start, end) {
-  // Check if Turf.js is loaded and isochrone data is available
   if (typeof turf === 'undefined' || !climateIsochrones) {
     console.warn("Turf.js not loaded or isochrone data is missing. Returning null.");
     return null;
   }
 
-  // Define a maximum acceptable distance (e.g., 100 meters) for a point to snap to the road network
   const MAX_SNAPPING_DISTANCE_KM = 0.1;
 
-  // 1. Extract all LineString features (roads) from the GeoJSON
   let roadFeatures = climateIsochrones.features.filter(f => f.geometry.type === "LineString");
 
-  // Flatten if the GeoJSON is complex (MultiLineString, GeometryCollection)
   if (roadFeatures.length === 0) {
-      try {
-          const flattened = turf.flatten(climateIsochrones);
-          roadFeatures = flattened.features.filter(f => f.geometry.type === "LineString");
-      } catch (e) {
-          console.error("Error flattening isochrones GeoJSON:", e);
-      }
+    try {
+      const flattened = turf.flatten(climateIsochrones);
+      roadFeatures = flattened.features.filter(f => f.geometry.type === "LineString");
+    } catch (e) {
+      console.error("Error flattening isochrones GeoJSON:", e);
+    }
   }
 
   if (roadFeatures.length === 0) {
-      console.warn("No LineString features found in isochrone data. Returning null.");
-      return null;
+    console.warn("No LineString features found in isochrone data. Returning null.");
+    return null;
   }
 
   const roadSegments = turf.featureCollection(roadFeatures);
-
   const startPoint = turf.point(start);
   const endPoint = turf.point(end);
 
-  // 2. Snap start and end points to the nearest road network point
   const snappedStartFeature = turf.nearestPointOnLine(roadSegments, startPoint);
   const snappedEndFeature = turf.nearestPointOnLine(roadSegments, endPoint);
 
   const snappedStart = snappedStartFeature.geometry.coordinates;
   const snappedEnd = snappedEndFeature.geometry.coordinates;
 
-  // CRITICAL CHECK: Ensure start point is close enough to the road network
   const startSnapDistance = getDistance(start, snappedStart);
   if (startSnapDistance > MAX_SNAPPING_DISTANCE_KM) {
-      console.warn(`Start location is too far from the road network (${startSnapDistance.toFixed(2)} km). Returning null.`);
-      return null;
+    console.warn(`Start location is too far from the road network (${startSnapDistance.toFixed(2)} km). Returning null.`);
+    return null;
   }
 
-  // 3. Generate intermediate points and snap them to the road network
   const intermediateCoordinates = [];
-  const totalSteps = 20; // Number of intermediate points to calculate
+  const totalSteps = 20;
 
   for (let i = 1; i < totalSteps; i++) {
     const progress = i / totalSteps;
-    // Interpolate the straight-line position (Lng, Lat)
     const intermediateTarget = [
-        snappedStart[0] + (snappedEnd[0] - snappedStart[0]) * progress,
-        snappedStart[1] + (snappedEnd[1] - snappedStart[1]) * progress,
+      snappedStart[0] + (snappedEnd[0] - snappedStart[0]) * progress,
+      snappedStart[1] + (snappedEnd[1] - snappedStart[1]) * progress,
     ];
 
     const intermediatePoint = turf.point(intermediateTarget);
-
-    // Find the nearest point *on* the road network line to the interpolated point
     const nearestRoadPointFeature = turf.nearestPointOnLine(roadSegments, intermediatePoint);
     const nearestRoadPoint = nearestRoadPointFeature.geometry.coordinates;
 
-    // Only add if the nearest road point is reasonably close (e.g., within 50 meters or 0.05 km)
     if (turf.distance(intermediatePoint, nearestRoadPoint, {units: 'kilometers'}) < 0.05) {
       intermediateCoordinates.push(nearestRoadPoint);
     }
   }
 
-  // 4. Combine points to form the route
   const finalRoute = [
     start,
     snappedStart,
@@ -850,23 +759,20 @@ function findRouteInIsochrones(start, end) {
     end
   ];
 
-  // 5. Clean up redundant consecutive points (e.g., if snapping found the same point multiple times)
   const cleanedRoute = [];
   finalRoute.forEach(coord => {
-    // Only add if the current point is far enough from the last point added (> 5 meters)
     if (cleanedRoute.length === 0 || getDistance(cleanedRoute[cleanedRoute.length - 1], coord) > 0.005) {
-        cleanedRoute.push(coord);
+      cleanedRoute.push(coord);
     }
   });
 
   if (cleanedRoute.length < 2) {
-      console.warn("Cleaned route has fewer than 2 points. Returning null.");
-      return null;
+    console.warn("Cleaned route has fewer than 2 points. Returning null.");
+    return null;
   }
 
   return cleanedRoute;
 }
-
 
 function clearShelterVisualization() {
   if (map.getLayer("shelter-route-line")) {
@@ -887,16 +793,11 @@ function clearShelterVisualization() {
   }
 }
 
-/**
- * Handles errors during the shelter finding or routing process by updating the status message.
- * @param {string} message - The error message to display.
- */
 function handleRoutingError(message) {
   const statusDiv = document.getElementById("shelter-status");
   statusDiv.textContent = message;
-  statusDiv.style.color = "#ff0055"; // Error color
+  statusDiv.style.color = "#ff0055";
 
-  // Ensure the shelter info panel is hidden
   document.getElementById("shelter-info-panel").style.display = "none";
   clearShelterVisualization();
 }
