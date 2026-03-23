@@ -10,6 +10,15 @@ let cadastralData = null;
 
 const rankContainer = document.getElementById("rank-popup");
 
+// ---------------- FLYTO CONTROLS ----------------
+function flyToCenter() {
+  map.flyTo({ center: CENTER, zoom: 15, pitch: 60, bearing: -20, speed: 1.2 });
+}
+
+function flyToCity() {
+  map.flyTo({ center: CENTER, zoom: 10.5, pitch: 20, bearing: 0, speed: 1.0 });
+}
+
 // ---------------- DISTANCE ----------------
 function getDistance(coord1, coord2) {
   const R = 6371;

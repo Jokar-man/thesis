@@ -15,6 +15,17 @@ const rankContainer = document.getElementById("rank-popup");
 let centerFocusKm = 5;
 
 /* -------------------------
+   FLYTO CONTROLS
+-------------------------- */
+function flyToCenter() {
+  map.flyTo({ center: CENTER, zoom: 15, pitch: 60, bearing: -20, speed: 1.2 });
+}
+
+function flyToCity() {
+  map.flyTo({ center: CENTER, zoom: 11.5, pitch: 30, bearing: 0, speed: 1.0 });
+}
+
+/* -------------------------
    UTILITY: Haversine Distance (km)
 -------------------------- */
 function getDistance(coord1, coord2) {
